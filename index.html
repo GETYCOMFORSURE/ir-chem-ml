@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IR-ML: Automated Chemical Classification</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #7ee8a2;
+    --accent2: #5bc0f8;
+    --accent3: #f5a623;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --o: #f87171;
+    --m: #7ee8a2;
+    --p: #5bc0f8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── Animated background ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 80% 20%, rgba(94,234,212,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 10% 80%, rgba(91,192,248,0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Hero ── */
+  header {
+    padding: 6rem 0 4rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.1s;
+  }
+
+  h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.2s;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .subtitle {
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 580px;
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.3s;
+  }
+
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.4s;
+  }
+
+  .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 2px;
+    border: 1px solid;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-green { border-color: var(--accent); color: var(--accent); }
+  .badge-blue  { border-color: var(--accent2); color: var(--accent2); }
+  .badge-amber { border-color: var(--accent3); color: var(--accent3); }
+
+  /* ── Section titles ── */
+  section {
+    padding: 5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+
+  h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    font-weight: 400;
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  /* ── Pipeline steps ── */
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0;
+    margin-top: 3rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .step {
+    padding: 2rem 1.5rem;
+    border-right: 1px solid var(--border);
+    position: relative;
+    transition: background 0.2s;
+  }
+
+  .step:last-child { border-right: none; }
+  .step:hover { background: rgba(255,255,255,0.02); }
+
+  .step-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.8rem;
+  }
+
+  .step-title {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+
+  .step-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ── Spectrum visualisation ── */
+  .spectrum-demo {
+    margin-top: 3rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2rem;
+  }
+
+  .spectrum-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .spectrum-canvas {
+    width: 100%;
+    height: 180px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Animated spectra SVG lines */
+  .spectrum-line {
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* ── PCA scatter plot ── */
+  .pca-demo {
+    margin-top: 3rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  @media (max-width: 640px) {
+    .pca-demo { grid-template-columns: 1fr; }
+  }
+
+  .pca-scatter {
+    width: 100%;
+    aspect-ratio: 1;
+    max-width: 320px;
+    position: relative;
+  }
+
+  .legend {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Code block ── */
+  pre {
+    background: #0d0d15;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin-top: 1.5rem;
+    color: #c8c8e0;
+  }
+
+  .kw  { color: #7ee8a2; }
+  .fn  { color: #5bc0f8; }
+  .cm  { color: #4a4a6a; font-style: italic; }
+  .st  { color: #f5a623; }
+  .num { color: #f87171; }
+
+  /* ── Results ── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .result-card.o::before { background: var(--o); }
+  .result-card.m::before { background: var(--m); }
+  .result-card.p::before { background: var(--p); }
+
+  .result-num {
+    font-family: 'Instrument Serif', serif;
+    font-size: 2.5rem;
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+
+  .result-card.o .result-num { color: var(--o); }
+  .result-card.m .result-num { color: var(--m); }
+  .result-card.p .result-num { color: var(--p); }
+
+  .result-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  /* ── Stack ── */
+  .stack-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .stack-item {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    padding: 0.5rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text);
+  }
+
+  /* ── Footer ── */
+  footer {
+    padding: 3rem 0;
+    text-align: center;
+  }
+
+  .footer-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── Animated spectrum line ── */
+  @keyframes drawLine {
+    from { stroke-dashoffset: 2000; }
+    to   { stroke-dashoffset: 0; }
+  }
+
+  .draw-line {
+    stroke-dasharray: 2000;
+    stroke-dashoffset: 2000;
+    animation: drawLine 2.5s ease forwards;
+  }
+
+  /* ── Scatter dots ── */
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0); }
+    to   { opacity: 0.85; transform: scale(1); }
+  }
+
+  .dot {
+    animation: popIn 0.3s ease forwards;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ── Hero ── -->
+  <header>
+    <p class="eyebrow">Physical Chemistry × Machine Learning</p>
+    <h1>Classifying chemical<br>structure from <em>light</em></h1>
+    <p class="subtitle">
+      An end-to-end ML pipeline that reads IR spectra and identifies whether a benzene
+      derivative is ortho-, meta-, or para-substituted — built from scratch in a lab.
+    </p>
+    <div class="badges">
+      <span class="badge badge-green">PCA Dimensionality Reduction</span>
+      <span class="badge badge-blue">k-Nearest Neighbours</span>
+      <span class="badge badge-amber">380 Training Spectra · 76 Compounds</span>
+    </div>
+  </header>
+
+  <!-- ── Pipeline ── -->
+  <section>
+    <p class="section-label fade-in">How it works</p>
+    <h2 class="fade-in">Five-stage pipeline</h2>
+    <p class="fade-in" style="color: var(--muted); max-width: 560px;">
+      From raw FTIR output to automatic classification — every step built and understood,
+      not just called from a library.
+    </p>
+
+    <div class="pipeline fade-in">
+      <div class="step">
+        <p class="step-num">01 — COLLECT</p>
+        <p class="step-title">FTIR Spectroscopy</p>
+        <p class="step-desc">Shimadzu spectrometer. 400–4000 cm⁻¹. 5 repeats per compound. 380 spectra total.</p>
+      </div>
+      <div class="step">
+        <p class="step-num">02 — CLEAN</p>
+        <p class="step-title">Interpolation + Normalisation</p>
+        <p class="step-desc">Integer wavenumber indices. Trapezium-rule area normalisation. Fingerprint region (630–880 cm⁻¹).</p>
+      </div>
+      <div class="step">
+        <p class="step-num">03 — REDUCE</p>
+        <p class="step-title">Principal Component Analysis</p>
+        <p class="step-desc">251 wavenumber features → 20 principal components. sklearn PCA.</p>
+      </div>
+      <div class="step">
+        <p class="step-num">04 — TRAIN</p>
+        <p class="step-title">k-NN Classifier</p>
+        <p class="step-desc">67:33 train/test split by compound (not spectrum). k=3 nearest neighbours.</p>
+      </div>
+      <div class="step">
+        <p class="step-num">05 — CLASSIFY</p>
+        <p class="step-title">Unknown Identification</p>
+        <p class="step-desc">Personally collected spectra of unknown isomers classified against the full training library.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Spectra vis ── -->
+  <section>
+    <p class="section-label fade-in">Data</p>
+    <h2 class="fade-in">Raw IR spectra — fingerprint region</h2>
+    <p class="fade-in" style="color: var(--muted); max-width: 560px;">
+      The 630–880 cm⁻¹ region contains out-of-plane C-H bending vibrations whose
+      pattern is characteristic of substitution position.
+    </p>
+
+    <div class="spectrum-demo fade-in">
+      <div class="spectrum-label">
+        <span>% TRANSMITTANCE vs. WAVENUMBER (cm⁻¹)</span>
+        <span style="display:flex; gap:1.2rem;">
+          <span style="color:var(--o)">— ortho</span>
+          <span style="color:var(--m)">— meta</span>
+          <span style="color:var(--p)">— para</span>
+        </span>
+      </div>
+      <div class="spectrum-canvas">
+        <svg width="100%" height="100%" viewBox="0 0 800 180" preserveAspectRatio="none">
+          <!-- X axis -->
+          <line x1="0" y1="170" x2="800" y2="170" stroke="#1e1e2e" stroke-width="1"/>
+          <!-- Grid lines -->
+          <line x1="0" y1="140" x2="800" y2="140" stroke="#1a1a28" stroke-width="0.5"/>
+          <line x1="0" y1="110" x2="800" y2="110" stroke="#1a1a28" stroke-width="0.5"/>
+          <line x1="0" y1="80" x2="800" y2="80" stroke="#1a1a28" stroke-width="0.5"/>
+          <line x1="0" y1="50" x2="800" y2="50" stroke="#1a1a28" stroke-width="0.5"/>
+          <!-- ortho-like spectrum (strong absorption near 750) -->
+          <path class="spectrum-line draw-line" stroke="#f87171" style="animation-delay:0.2s"
+            d="M0,90 C30,88 60,92 100,95 C140,98 160,100 200,96 C230,93 250,85 270,60 C285,40 295,20 310,18 C320,18 330,30 345,55 C360,75 380,90 420,92 C460,94 500,90 530,88 C570,86 600,85 650,88 C700,91 750,90 800,89"/>
+          <!-- meta-like spectrum (absorption near 690 and 780) -->
+          <path class="spectrum-line draw-line" stroke="#7ee8a2" style="animation-delay:0.5s"
+            d="M0,85 C40,84 70,70 90,45 C105,28 115,20 130,22 C145,25 155,42 175,65 C195,84 230,90 280,88 C340,86 380,75 410,55 C425,42 435,30 448,28 C460,27 470,38 488,58 C508,80 550,90 600,89 C660,88 730,87 800,86"/>
+          <!-- para-like spectrum (strong single peak near 820) -->
+          <path class="spectrum-line draw-line" stroke="#5bc0f8" style="animation-delay:0.8s"
+            d="M0,82 C50,81 100,83 150,85 C200,87 250,88 300,87 C350,86 380,84 420,78 C450,72 480,58 510,35 C525,20 535,12 548,12 C560,13 570,24 588,48 C608,72 640,84 690,86 C730,87 770,86 800,85"/>
+        </svg>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-family:'DM Mono',monospace; font-size:0.6rem; color:var(--muted); margin-top:0.5rem;">
+        <span>630</span><span>700</span><span>750</span><span>800</span><span>850</span><span>880 cm⁻¹</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PCA ── -->
+  <section>
+    <p class="section-label fade-in">Dimensionality reduction</p>
+    <h2 class="fade-in">PCA separates substitution classes</h2>
+    <p class="fade-in" style="color: var(--muted); max-width: 560px; margin-bottom: 1.5rem;">
+      After reducing 251 wavenumber features to 3 principal components, the three
+      substitution classes form visually distinct clusters in PC-space.
+    </p>
+
+    <div class="pca-demo fade-in">
+      <div class="pca-scatter">
+        <svg width="100%" viewBox="0 0 300 300" style="border:1px solid var(--border); border-radius:4px; background:#0d0d15;">
+          <!-- Axes -->
+          <line x1="30" y1="270" x2="280" y2="270" stroke="#1e1e2e" stroke-width="1"/>
+          <line x1="30" y1="20"  x2="30"  y2="270" stroke="#1e1e2e" stroke-width="1"/>
+          <text x="155" y="292" fill="#4a4a6a" font-size="9" font-family="DM Mono,monospace" text-anchor="middle">PC1</text>
+          <text x="12"  y="150" fill="#4a4a6a" font-size="9" font-family="DM Mono,monospace" text-anchor="middle" transform="rotate(-90,12,150)">PC2</text>
+          <!-- ortho cluster -->
+          <circle class="dot" cx="80"  cy="220" r="5" fill="#f87171" style="animation-delay:0.1s"/>
+          <circle class="dot" cx="95"  cy="205" r="5" fill="#f87171" style="animation-delay:0.15s"/>
+          <circle class="dot" cx="70"  cy="195" r="5" fill="#f87171" style="animation-delay:0.2s"/>
+          <circle class="dot" cx="110" cy="215" r="5" fill="#f87171" style="animation-delay:0.25s"/>
+          <circle class="dot" cx="88"  cy="230" r="5" fill="#f87171" style="animation-delay:0.3s"/>
+          <circle class="dot" cx="100" cy="240" r="5" fill="#f87171" style="animation-delay:0.35s"/>
+          <circle class="dot" cx="60"  cy="212" r="4" fill="#f87171" style="animation-delay:0.4s"/>
+          <circle class="dot" cx="118" cy="228" r="4" fill="#f87171" style="animation-delay:0.45s"/>
+          <!-- meta cluster -->
+          <circle class="dot" cx="155" cy="150" r="5" fill="#7ee8a2" style="animation-delay:0.5s"/>
+          <circle class="dot" cx="170" cy="138" r="5" fill="#7ee8a2" style="animation-delay:0.55s"/>
+          <circle class="dot" cx="145" cy="162" r="5" fill="#7ee8a2" style="animation-delay:0.6s"/>
+          <circle class="dot" cx="185" cy="145" r="5" fill="#7ee8a2" style="animation-delay:0.65s"/>
+          <circle class="dot" cx="160" cy="170" r="5" fill="#7ee8a2" style="animation-delay:0.7s"/>
+          <circle class="dot" cx="175" cy="155" r="4" fill="#7ee8a2" style="animation-delay:0.75s"/>
+          <circle class="dot" cx="138" cy="145" r="4" fill="#7ee8a2" style="animation-delay:0.8s"/>
+          <circle class="dot" cx="195" cy="160" r="4" fill="#7ee8a2" style="animation-delay:0.85s"/>
+          <!-- para cluster -->
+          <circle class="dot" cx="230" cy="70"  r="5" fill="#5bc0f8" style="animation-delay:0.9s"/>
+          <circle class="dot" cx="245" cy="58"  r="5" fill="#5bc0f8" style="animation-delay:0.95s"/>
+          <circle class="dot" cx="218" cy="82"  r="5" fill="#5bc0f8" style="animation-delay:1.0s"/>
+          <circle class="dot" cx="258" cy="68"  r="5" fill="#5bc0f8" style="animation-delay:1.05s"/>
+          <circle class="dot" cx="235" cy="88"  r="5" fill="#5bc0f8" style="animation-delay:1.1s"/>
+          <circle class="dot" cx="250" cy="78"  r="4" fill="#5bc0f8" style="animation-delay:1.15s"/>
+          <circle class="dot" cx="210" cy="62"  r="4" fill="#5bc0f8" style="animation-delay:1.2s"/>
+          <circle class="dot" cx="262" cy="85"  r="4" fill="#5bc0f8" style="animation-delay:1.25s"/>
+        </svg>
+      </div>
+      <div class="legend">
+        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:0.5rem;">
+          Each dot = one spectrum. Clear spatial separation confirms that PCA captures
+          substitution-position information from the fingerprint region alone.
+        </p>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--o)"></div>
+          <div>
+            <strong style="color:var(--text)">ortho-substituted</strong><br>
+            <span style="font-size:0.75rem; color:var(--muted)">Strong absorption ~750 cm⁻¹</span>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--m)"></div>
+          <div>
+            <strong style="color:var(--text)">meta-substituted</strong><br>
+            <span style="font-size:0.75rem; color:var(--muted)">Bands at ~690 and ~780 cm⁻¹</span>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--p)"></div>
+          <div>
+            <strong style="color:var(--text)">para-substituted</strong><br>
+            <span style="font-size:0.75rem; color:var(--muted)">Single strong band ~820 cm⁻¹</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Code ── -->
+  <section>
+    <p class="section-label fade-in">Core library</p>
+    <h2 class="fade-in">Built from first principles</h2>
+    <p class="fade-in" style="color: var(--muted); max-width: 560px;">
+      The trapezium rule, interpolation logic, and data-loading pipeline were all written
+      from scratch before sklearn was introduced for PCA and classification.
+    </p>
+
+<pre class="fade-in"><span class="cm"># Load 380 spectra, pre-process each, apply PCA → DataFrame</span>
+
+<span class="kw">def</span> <span class="fn">load_spectra</span>(n, spectra_dir=<span class="st">"data/raw_ir_spectra"</span>):
+    spectra = []
+    <span class="kw">for</span> entry <span class="kw">in</span> os.scandir(spectra_dir):
+        df = pd.read_csv(entry.path, skiprows=<span class="num">4</span>, sep=<span class="st">r"\s+"</span>,
+                         names=[entry.name], index_col=<span class="num">0</span>)
+        df = normalisation(df)    <span class="cm"># area → 1 via trapezium rule</span>
+        df = interpolation(df)    <span class="cm"># decimal → integer wavenumbers</span>
+        df = narrow_range(df)     <span class="cm"># keep 630–880 cm⁻¹ only</span>
+
+        name = re.sub(<span class="st">r'_\d+$'</span>, <span class="st">''</span>, entry.name.removesuffix(<span class="st">'.txt'</span>))
+        df.columns = [name]
+        spectra.append(df)
+
+    combined = pd.concat(spectra, axis=<span class="num">1</span>)
+    <span class="kw">if</span> n > <span class="num">0</span>:
+        <span class="kw">return</span> <span class="fn">perform_pca</span>(n, combined)
+    <span class="kw">return</span> combined
+
+
+<span class="cm"># Then train + classify in two lines:</span>
+knn = KNeighborsClassifier(n_neighbors=<span class="num">3</span>)
+knn.fit(X_train.T, train_labels)
+predictions = knn.predict(X_test.T)
+</pre>
+  </section>
+
+  <!-- ── Results ── -->
+  <section>
+    <p class="section-label fade-in">Results</p>
+    <h2 class="fade-in">What the model sees</h2>
+    <p class="fade-in" style="color: var(--muted); margin-bottom: 0.5rem;">
+      Training dataset composition, and the unknown spectra (A_1–A_5) successfully classified.
+    </p>
+
+    <div class="results-grid fade-in">
+      <div class="result-card o">
+        <p class="result-num">25</p>
+        <p class="result-label">ortho-substituted compounds in training set</p>
+      </div>
+      <div class="result-card m">
+        <p class="result-num">26</p>
+        <p class="result-label">meta-substituted compounds in training set</p>
+      </div>
+      <div class="result-card p">
+        <p class="result-num">25</p>
+        <p class="result-label">para-substituted compounds in training set</p>
+      </div>
+      <div class="result-card" style="border-top:2px solid var(--accent3);">
+        <p class="result-num" style="color:var(--accent3);">5</p>
+        <p class="result-label">personally collected unknowns — correctly classified by k-NN</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Stack ── -->
+  <section style="border-bottom:none;">
+    <p class="section-label fade-in">Stack</p>
+    <h2 class="fade-in">Tools used</h2>
+    <div class="stack-grid fade-in">
+      <span class="stack-item">Python 3</span>
+      <span class="stack-item">NumPy</span>
+      <span class="stack-item">Pandas</span>
+      <span class="stack-item">scikit-learn</span>
+      <span class="stack-item">Matplotlib</span>
+      <span class="stack-item">Google Colab</span>
+      <span class="stack-item">Shimadzu FTIR</span>
+      <span class="stack-item">Jupyter</span>
+    </div>
+    <p style="margin-top:2rem; font-size:0.85rem; color:var(--muted); max-width:540px;" class="fade-in">
+      Third-year Physical Chemistry computing lab (C317) — University of Oxford.
+      Pipeline built across 8 notebooks, from Python fundamentals to a working ML classifier
+      applied to personally collected experimental data.
+    </p>
+  </section>
+
+</div>
+
+<footer>
+  <p class="footer-text">IR-CHEM-ML · PHYSICAL CHEMISTRY × MACHINE LEARNING</p>
+</footer>
+
+<script>
+  // Intersection observer for scroll animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 60);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
