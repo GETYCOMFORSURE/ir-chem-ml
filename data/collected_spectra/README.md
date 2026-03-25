@@ -18,4 +18,4 @@ These are IR spectra collected personally in the lab on the Shimadzu FTIR spectr
 
 ## How these are used
 
-In notebook `7b_Machine_Learning_Part_II.ipynb`, the full training library (380 spectra) is used to train a k-NN classifier. These 5 spectra are then passed in as the test set, and the model predicts whether the unknown compound is ortho-, meta-, or para-aminobenzoic acid.
+In notebook `Machine_Learning_Part_II.ipynb`, the full training library (380 spectra) is used to train a k-NN classifier. These 5 spectra are then passed in as the test set, and the model predicts whether the unknown compound is ortho-, meta-, or para-aminobenzoic acid.
