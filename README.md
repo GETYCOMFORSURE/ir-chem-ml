@@ -2,7 +2,6 @@
 
 > Classifying unknown benzene derivatives from IR spectra using PCA dimensionality reduction and k-Nearest Neighbours — built from scratch in a physical chemistry lab.
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/ir-chem-ml/blob/main/notebooks/7a_Machine_Learning_Part_I.ipynb)
 
 ---
 
