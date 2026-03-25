@@ -35,7 +35,7 @@ ftir-substituent-classifier/
 │   ├── raw_ir_spectra/           # 380 training spectra (not included — see below)
 │   └── your_collected_spectra/   # Personally collected unknowns (A_1.txt – A_5.txt)
 ├── results/                      # PCA plots, model outputs
-│   └── raw_ir_spectra/
+│   └── plot.ipynb/
 ├── requirements.txt
 └── README.md
 ```
