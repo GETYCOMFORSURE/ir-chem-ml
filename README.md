@@ -35,6 +35,7 @@ ftir-substituent-classifier/
 │   ├── raw_ir_spectra/           # 380 training spectra (not included — see below)
 │   └── your_collected_spectra/   # Personally collected unknowns (A_1.txt – A_5.txt)
 ├── results/                      # PCA plots, model outputs
+│   └── raw_ir_spectra/
 ├── requirements.txt
 └── README.md
 ```
@@ -56,7 +57,7 @@ Or open any notebook directly in Google Colab. Mount your Drive and point `ir_pi
 
 ## Data
 
-Training spectra are not included in this repo (380 files, proprietary instrument exports). Place them in `data/raw_ir_spectra/` following the naming convention `compoundname_N.txt` (e.g. `p-xylene_1.txt`). Five personally collected unknown spectra are included in `data/your_collected_spectra/`.
+See data in `data/raw_ir_spectra/` following the naming convention `compoundname_N.txt` (e.g. `p-xylene_1.txt`). Five personally collected unknown spectra are included in `data/your_collected_spectra/`.
 
 ---
 
