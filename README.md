@@ -1,6 +1,6 @@
 # FTIR Substituent Classifier
 
-Classifying benzene derivatives as *ortho-*, *meta-*, or *para-*substituted from their IR spectra — using PCA dimensionality reduction and k-Nearest Neighbours.
+Classifying benzene derivatives as *ortho-*, *meta-*, or *para-* substituted from their IR spectra — using PCA dimensionality reduction and k-Nearest Neighbours.
 
 Built from scratch in Python as part of a third-year physical chemistry lab at the University of Oxford.
 
